@@ -22,3 +22,15 @@
     @apply bg-zinc-950 text-zinc-100 antialiased;
   }
 }
+
+@layer base {
+  button:not([disabled]),
+  [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
