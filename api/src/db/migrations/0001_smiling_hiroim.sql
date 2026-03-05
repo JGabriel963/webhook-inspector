@@ -1,0 +1,1 @@
+ALTER TABLE "webhooks" ALTER COLUMN "status_code" SET DEFAULT 200;

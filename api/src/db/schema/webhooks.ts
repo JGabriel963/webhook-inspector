@@ -8,7 +8,7 @@ export const webhooks = pgTable("webhooks", {
   method: text().notNull(),
   pathname: text().notNull(),
   ip: text().notNull(),
-  statusCode: integer().notNull(),
+  statusCode: integer().notNull().default(200),
   contentType: text(),
   contentLength: integer(),
   queryParams: jsonb().$type<Record<string, string>>(),
