@@ -1,12 +1,25 @@
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { WebhooksListItem } from "./webhooks-list-item";
 import { webhookListSchema } from "../http/schemas/webhooks";
-import { Loader2 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Loader2, Wand2Icon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 export function WebhooksList() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver>(null);
+
+  const [checkedWebhooksIds, setCheeckedWebhooksIds] = useState<string[]>([]);
+  const [generatedHandlerCode, setGeneratedHandlerCode] = useState<
+    string | null
+  >(null);
+
+  const onWebhookChecked = (webhookId: string) => {
+    if (checkedWebhooksIds.includes(webhookId)) {
+      setCheeckedWebhooksIds((state) => state.filter((id) => id !== webhookId));
+    } else {
+      setCheeckedWebhooksIds((state) => [...state, webhookId]);
+    }
+  };
 
   const { data, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useSuspenseInfiniteQuery({
@@ -61,11 +74,47 @@ export function WebhooksList() {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  async function handleGenerateHandler() {
+    const response = await fetch("http://localhost:3333/api/generate", {
+      method: "POST",
+      body: JSON.stringify({
+        webhookIds: checkedWebhooksIds,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    type GenerateResponse = { code: string };
+
+    const data: GenerateResponse = await response.json();
+
+    setGeneratedHandlerCode(data.code);
+  }
+
+  const hasAnyWebhooksChecked = checkedWebhooksIds.length > 0;
+
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="space-y-1 p-2">
+      <div className="space-y-1 p-2 relative">
+        <div className="fixed bottom-3 left-3 ">
+          <button
+            disabled={!hasAnyWebhooksChecked}
+            onClick={handleGenerateHandler}
+            className=" bg-indigo-400 text-white w-full rounded-lg flex items-center justify-center gap-3 font-medium mb-3 text-sm py-2.5 px-3 disabled:opacity-50"
+          >
+            <Wand2Icon />
+            Gerar handler
+          </button>
+        </div>
+
         {webhooks.map((webhook) => (
-          <WebhooksListItem key={webhook.id} webhook={webhook} />
+          <WebhooksListItem
+            isWebhookChecked={checkedWebhooksIds.includes(webhook.id)}
+            key={webhook.id}
+            webhook={webhook}
+            onWebhookChecked={onWebhookChecked}
+          />
         ))}
       </div>
 
