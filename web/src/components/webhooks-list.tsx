@@ -1,8 +1,10 @@
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { WebhooksListItem } from "./webhooks-list-item";
+import * as Dialog from "@radix-ui/react-dialog";
 import { webhookListSchema } from "../http/schemas/webhooks";
 import { Loader2, Wand2Icon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { CodeBlock } from "./ui/code-block";
 
 export function WebhooksList() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -95,38 +97,52 @@ export function WebhooksList() {
   const hasAnyWebhooksChecked = checkedWebhooksIds.length > 0;
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="space-y-1 p-2 relative">
-        <div className="fixed bottom-3 left-3 ">
-          <button
-            disabled={!hasAnyWebhooksChecked}
-            onClick={handleGenerateHandler}
-            className=" bg-indigo-400 text-white w-full rounded-lg flex items-center justify-center gap-3 font-medium mb-3 text-sm py-2.5 px-3 disabled:opacity-50"
-          >
-            <Wand2Icon />
-            Gerar handler
-          </button>
+    <>
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-1 p-2 relative">
+          <div className="fixed bottom-3 left-3 ">
+            <button
+              disabled={!hasAnyWebhooksChecked}
+              onClick={handleGenerateHandler}
+              className=" bg-indigo-400 text-white w-full rounded-lg flex items-center justify-center gap-3 font-medium mb-3 text-sm py-2.5 px-3 disabled:opacity-50"
+            >
+              <Wand2Icon />
+              Gerar handler
+            </button>
+          </div>
+
+          {webhooks.map((webhook) => (
+            <WebhooksListItem
+              isWebhookChecked={checkedWebhooksIds.includes(webhook.id)}
+              key={webhook.id}
+              webhook={webhook}
+              onWebhookChecked={onWebhookChecked}
+            />
+          ))}
         </div>
 
-        {webhooks.map((webhook) => (
-          <WebhooksListItem
-            isWebhookChecked={checkedWebhooksIds.includes(webhook.id)}
-            key={webhook.id}
-            webhook={webhook}
-            onWebhookChecked={onWebhookChecked}
-          />
-        ))}
+        {hasNextPage && (
+          <div className="p-2" ref={loadMoreRef}>
+            {isFetchingNextPage && (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="size-5 text-zinc-500 animate-spin" />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {hasNextPage && (
-        <div className="p-2" ref={loadMoreRef}>
-          {isFetchingNextPage && (
-            <div className="flex items-center justify-center py-2">
-              <Loader2 className="size-5 text-zinc-500 animate-spin" />
+      {!!generatedHandlerCode && (
+        <Dialog.Root defaultOpen>
+          <Dialog.Overlay className="bg-black/60 inset-0 fixed z-20" />
+
+          <Dialog.Content className="flex items-center justify-center fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] -translate-x-1/2 -translate-y-1/2 z-40">
+            <div className="bg-zinc-900 w-150 p-4 rounded-lg border border-zinc-800 max-h-155 overflow-y-auto">
+              <CodeBlock language="typescript" code={generatedHandlerCode} />
             </div>
-          )}
-        </div>
+          </Dialog.Content>
+        </Dialog.Root>
       )}
-    </div>
+    </>
   );
 }
